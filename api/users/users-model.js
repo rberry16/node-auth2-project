@@ -1,6 +1,7 @@
 const db = require('../../data/db-config.js');
+const { use } = require('./users-router.js');
 
-async function find() {
+function find() {
   /**
     You will need to join two tables.
     Resolves to an ARRAY with all users.
@@ -18,10 +19,9 @@ async function find() {
       }
     ]
    */
-  const users = await db('users as u')
+  return db('users as u')
     .leftJoin('roles as r', 'u.role_id', 'r.role_id')
-    .select('u.user_id', 'u.username', 'r.role_name')
-  return users;
+    .select('u.user_id', 'u.username', 'r.role_name');
 }
 
 function findBy(filter) {
@@ -38,6 +38,10 @@ function findBy(filter) {
       }
     ]
    */
+  return db('users as u')
+    .leftJoin('roles as r', 'u.role_id', 'r.role_id')
+    .select('u.user_id', 'u.username', 'u.password', 'r.role_name')
+    .where(filter)
 }
 
 function findById(user_id) {
@@ -51,6 +55,10 @@ function findById(user_id) {
       "role_name": "instructor"
     }
    */
+  return db('users as u')
+    .leftJoin('roles as r', 'u.role_id', 'r.role_id')
+    .select('u.user_id', 'u.username', 'r.role_name')
+    .where('u.user_id', user_id);
 }
 
 /**

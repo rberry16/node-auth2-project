@@ -18,7 +18,9 @@ async function find() {
       }
     ]
    */
-  const users = await db('users');
+  const users = await db('users as u')
+    .leftJoin('roles as r', 'u.role_id', 'r.role_id')
+    .select('u.user_id', 'u.username', 'r.role_name')
   return users;
 }
 

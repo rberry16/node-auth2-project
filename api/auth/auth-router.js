@@ -3,6 +3,7 @@ const { checkUsernameExists, validateRoleName } = require('./auth-middleware');
 const { JWT_SECRET } = require("../secrets"); // use this secret!
 const User = require('../users/users-model');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 router.post("/register", validateRoleName, async (req, res, next) => {
   /**
@@ -16,13 +17,13 @@ router.post("/register", validateRoleName, async (req, res, next) => {
       "role_name": "angel"
     }
    */
-  try {    
+  try {
 
     const hash = bcrypt.hashSync(req.body.password, 8)
 
     const newUser = await User.add({
-      username: req.body.username, 
-      role_name: req.role_name, 
+      username: req.body.username,
+      role_name: req.role_name,
       password: hash
     });
 
@@ -54,6 +55,31 @@ router.post("/login", checkUsernameExists, (req, res, next) => {
       "role_name": "admin" // the role of the authenticated user
     }
    */
+  try {
+    const buildToken = (user) => {
+      const payload = {
+        subject: user.user_id,
+        username: user.username,
+        role_name: user.role_name
+      }
+      const options = {
+        expiresIn: '1d',
+      }
+      return jwt.sign(payload, JWT_SECRET, options);
+    }
+
+    if (bcrypt.compareSync(req.body.password, req.user.password)) {
+      const token = buildToken(req.user);
+      res.json({
+        message: `${req.user.username} is back!`,
+        token: token
+      });
+    } else {
+      res.status(401).json({ message: 'Invalid credentials' });
+    }
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = router;

@@ -1,5 +1,6 @@
 const { JWT_SECRET } = require("../secrets"); // use this secret!
 const db = require('../../data/db-config');
+const User = require('../users/users-model');
 
 const restricted = (req, res, next) => {
   /*
@@ -43,11 +44,16 @@ const checkUsernameExists = async (req, res, next) => {
       "message": "Invalid credentials"
     }
   */
- const existing = await db('users').where('username', req.body.username);
- if (!existing || existing === undefined) {
+ if (!req.body.username || req.body.username === undefined) {
   res.status(401).json({message: 'Invalid credentials'});
  } else {
-  next();
+  const existing = await db('users').where({username: req.body.username}).first();
+  if (!existing || existing === undefined) {
+    res.status(401).json({message: 'Invalid credentials'});
+  } else {
+    req.user = existing;
+    next();
+  }
  }
 }
 

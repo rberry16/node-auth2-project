@@ -1,4 +1,5 @@
 const { JWT_SECRET } = require("../secrets"); // use this secret!
+const db = require('../../data/db-config');
 
 const restricted = (req, res, next) => {
   /*
@@ -34,7 +35,7 @@ const only = role_name => (req, res, next) => {
 }
 
 
-const checkUsernameExists = (req, res, next) => {
+const checkUsernameExists = async (req, res, next) => {
   /*
     If the username in req.body does NOT exist in the database
     status 401
@@ -42,7 +43,12 @@ const checkUsernameExists = (req, res, next) => {
       "message": "Invalid credentials"
     }
   */
- next();
+ const existing = await db('users').where('username', req.body.username);
+ if (!existing || existing === undefined) {
+  res.status(401).json({message: 'Invalid credentials'});
+ } else {
+  next();
+ }
 }
 
 
@@ -65,7 +71,18 @@ const validateRoleName = (req, res, next) => {
       "message": "Role name can not be longer than 32 chars"
     }
   */
- next();
+ const role = req.body.role_name;
+ if (!req.body.role_name || req.body.role_name === undefined) {
+  req.role_name = 'student';
+  next();
+ } else if (role.trim() === 'admin') {
+  res.status(422).json({message: 'Role name can not be admin'});
+ } else if (role.trim().length > 32) {
+  res.status(422).json({message: 'Role name can not be longer than 32 chars'});
+ } else {
+  req.role_name = role.trim();
+  next();
+ }
 }
 
 module.exports = {

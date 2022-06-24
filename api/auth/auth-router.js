@@ -58,9 +58,9 @@ router.post("/login", checkUsernameExists, (req, res, next) => {
   try {
     const buildToken = (user) => {
       const payload = {
-        subject: user.user_id,
         username: user.username,
-        role_name: user.role_name
+        role_name: user.role_name,
+        subject: user.user_id
       }
       const options = {
         expiresIn: '1d',
@@ -72,7 +72,7 @@ router.post("/login", checkUsernameExists, (req, res, next) => {
       const token = buildToken(req.user);
       res.json({
         message: `${req.user.username} is back!`,
-        token: token
+        token
       });
     } else {
       res.status(401).json({ message: 'Invalid credentials' });

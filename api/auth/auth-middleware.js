@@ -1,5 +1,5 @@
 const { JWT_SECRET } = require("../secrets"); // use this secret!
-const db = require('../../data/db-config');
+const jwt = require('jsonwebtoken');
 const User = require('../users/users-model');
 
 const restricted = (req, res, next) => {
@@ -18,7 +18,18 @@ const restricted = (req, res, next) => {
 
     Put the decoded token in the req object, to make life easier for middlewares downstream!
   */
- next();
+ const token = req.headers.authorization;
+ if (!token) {
+  return res.status(401).json({message: 'Token required'});
+ }
+ jwt.verify(token, JWT_SECRET, (err, decodedToken) => {
+  if (err) {
+    res.status(401).json({message: 'Token invalid'});
+  } else {
+    req.decodedToken = decodedToken;
+    next();
+  }
+ })
 }
 
 const only = role_name => (req, res, next) => {
@@ -32,7 +43,11 @@ const only = role_name => (req, res, next) => {
 
     Pull the decoded token from the req object, to avoid verifying it again!
   */
- next();
+ if (role_name === req.decodedToken.role_name) {
+  next();
+ } else {
+  res.status(403).json({message: 'This is not for you'});
+ }
 }
 
 
@@ -47,7 +62,7 @@ const checkUsernameExists = async (req, res, next) => {
  if (!req.body.username || req.body.username === undefined) {
   res.status(401).json({message: 'Invalid credentials'});
  } else {
-  const existing = await db('users').where({username: req.body.username}).first();
+  const existing = await User.findBy({username: req.body.username});
   if (!existing || existing === undefined) {
     res.status(401).json({message: 'Invalid credentials'});
   } else {
